@@ -1,0 +1,493 @@
+# Tecnologico Nacional de Mexico
+# Instituto Tecnologico de Orizaba
+# Division de Estudios de Posgrado e Investigacion
+# Doctorado en Ciencias de la Ingenieria
+# M. Sc. Luis Antonio Velazquez Herrera
+# PhD Eusebio Bolaños Reynoso
+# PhD Leticia López Zamora
+# ENZYMATICHYDROCHEM Simulator
+
+# carga de paquetes
+using DifferentialEquations
+using Gtk.ShortNames
+using CSV
+using Winston
+using Random
+import DataFrames
+
+#Variable to save or not data (default true)
+flag1 = true
+
+
+################################################################################
+# Interfaz section
+################################################################################
+# Environmental variable to allow Window decorations
+ENV["gtk_csd"] = 0
+
+global c1 = Canvas()
+set_gtk_property!(c1,:visible,true)
+set_gtk_property!(c1, :width_request, 300)
+set_gtk_property!(c1, :height_request, 400)
+global c2 = Canvas()
+set_gtk_property!(c2,:visible,true)
+set_gtk_property!(c2, :width_request, 300)
+set_gtk_property!(c2, :height_request, 400)
+
+w = Window("ENZYMATICHYDROCHEM Simulator V 0.1")
+
+################################################################################
+#Grid section
+################################################################################
+# Grid for second layer (on F1)
+g1 = Grid()
+set_gtk_property!(g1, :column_homogeneous, true)
+set_gtk_property!(g1, :row_homogeneous, false)
+set_gtk_property!(g1, :column_spacing, 10)
+set_gtk_property!(g1, :row_spacing, 10)
+set_gtk_property!(g1, :margin_top, 15)
+set_gtk_property!(g1, :margin_bottom, 15)
+set_gtk_property!(g1, :margin_left, 15)
+set_gtk_property!(g1, :margin_right, 15)
+
+# # Grid to allocate bottons
+ButtonsGrid = Grid()
+set_gtk_property!(ButtonsGrid, :column_homogeneous, true)
+set_gtk_property!(ButtonsGrid, :row_homogeneous, false)
+set_gtk_property!(ButtonsGrid, :column_spacing, 10)
+set_gtk_property!(ButtonsGrid, :row_spacing, 10)
+set_gtk_property!(ButtonsGrid, :margin_top, 10)
+set_gtk_property!(ButtonsGrid, :margin_bottom, 10)
+set_gtk_property!(ButtonsGrid, :margin_left, 10)
+set_gtk_property!(ButtonsGrid, :margin_right, 10)
+
+# VariablesGrid
+VariablesGrid = Grid()
+set_gtk_property!(VariablesGrid, :column_homogeneous, true)
+set_gtk_property!(VariablesGrid, :row_homogeneous, false)
+set_gtk_property!(VariablesGrid, :column_spacing, 10)
+set_gtk_property!(VariablesGrid, :row_spacing, 10)
+set_gtk_property!(VariablesGrid, :margin_top, 10)
+set_gtk_property!(VariablesGrid, :margin_bottom, 10)
+set_gtk_property!(VariablesGrid, :margin_left, 10)
+set_gtk_property!(VariablesGrid, :margin_right, 10)
+
+LabelAuthorsGrid = Grid()
+set_gtk_property!(LabelAuthorsGrid, :column_homogeneous, true)
+set_gtk_property!(LabelAuthorsGrid, :row_homogeneous, false)
+set_gtk_property!(LabelAuthorsGrid, :column_spacing, 10)
+set_gtk_property!(LabelAuthorsGrid, :row_spacing, 10)
+set_gtk_property!(LabelAuthorsGrid, :margin_top, 10)
+set_gtk_property!(LabelAuthorsGrid, :margin_bottom, 10)
+set_gtk_property!(LabelAuthorsGrid, :margin_left, 10)
+set_gtk_property!(LabelAuthorsGrid, :margin_right, 10)
+
+GraphGrid = Grid()
+set_gtk_property!(GraphGrid, :column_homogeneous, true)
+set_gtk_property!(GraphGrid, :row_homogeneous, false)
+set_gtk_property!(GraphGrid, :column_spacing, 20)
+set_gtk_property!(GraphGrid, :row_spacing, 10)
+set_gtk_property!(GraphGrid, :margin_top, 10)
+set_gtk_property!(GraphGrid, :margin_bottom, 10)
+set_gtk_property!(GraphGrid, :margin_left, 10)
+set_gtk_property!(GraphGrid, :margin_right, 10)
+
+GraphLabelGrid = Grid()
+set_gtk_property!(GraphLabelGrid, :column_homogeneous, true)
+set_gtk_property!(GraphLabelGrid, :row_homogeneous, false)
+set_gtk_property!(GraphLabelGrid, :column_spacing, 20)
+set_gtk_property!(GraphLabelGrid, :row_spacing, 10)
+set_gtk_property!(GraphLabelGrid, :margin_top, 10)
+set_gtk_property!(GraphLabelGrid, :margin_bottom, 10)
+set_gtk_property!(GraphLabelGrid, :margin_left, 10)
+set_gtk_property!(GraphLabelGrid, :margin_right, 10)
+
+################################################################################
+# Frames Section
+################################################################################
+# F1 - First layer
+F1 = Frame("ENZYMATICHYDROCHEM Simulator V 0.1")
+set_gtk_property!(F1, :width_request, 300)
+set_gtk_property!(F1, :height_request, 500)
+
+ButtonFrame = Frame()
+set_gtk_property!(ButtonFrame, :width_request, 300)
+set_gtk_property!(ButtonFrame, :height_request, 100)
+set_gtk_property!(ButtonFrame, :margin_top, 5)
+set_gtk_property!(ButtonFrame, :margin_bottom, 10)
+set_gtk_property!(ButtonFrame, :margin_left, 10)
+set_gtk_property!(ButtonFrame, :margin_right, 10)
+
+VariablesFrame = Frame("Variables")
+set_gtk_property!(VariablesFrame, :width_request, 150)
+set_gtk_property!(VariablesFrame, :height_request, 50)
+set_gtk_property!(VariablesFrame, :margin_top, 10)
+set_gtk_property!(VariablesFrame, :margin_bottom, 5)
+set_gtk_property!(VariablesFrame, :margin_left, 10)
+set_gtk_property!(VariablesFrame, :margin_right, 10)
+
+LabelAuthorsFrame = Frame()
+set_gtk_property!(LabelAuthorsFrame, :width_request, 300)
+set_gtk_property!(LabelAuthorsFrame, :height_request, 100)
+set_gtk_property!(LabelAuthorsFrame, :margin_top, 220)
+set_gtk_property!(LabelAuthorsFrame, :margin_bottom, 20)
+set_gtk_property!(LabelAuthorsFrame, :margin_left, 10)
+set_gtk_property!(LabelAuthorsFrame, :margin_right, 10)
+
+GraphFrame = Frame("Graph")
+set_gtk_property!(GraphFrame, :width_request, 300)
+set_gtk_property!(GraphFrame, :height_request, 100)
+set_gtk_property!(GraphFrame, :margin_top, 10)
+set_gtk_property!(GraphFrame, :margin_bottom,200)
+set_gtk_property!(GraphFrame, :margin_left, 10)
+set_gtk_property!(GraphFrame, :margin_right, 10)
+
+GraphLabelFrame = Frame()
+set_gtk_property!(GraphLabelFrame, :width_request, 300)
+set_gtk_property!(GraphLabelFrame, :height_request, 100)
+set_gtk_property!(GraphLabelFrame, :margin_top, 10)
+set_gtk_property!(GraphLabelFrame, :margin_bottom,200)
+set_gtk_property!(GraphLabelFrame, :margin_left, 10)
+set_gtk_property!(GraphLabelFrame, :margin_right, 10)
+
+################################################################################
+# Entry section
+################################################################################
+# Liquid - solid ratio entry
+LsrEntry = Entry()
+set_gtk_property!(LsrEntry, :width_request, 5)
+set_gtk_property!(LsrEntry, :height_request, 5)
+# Sulfuric acid concentration
+C_EnzymaticEntry = Entry()
+set_gtk_property!(C_EnzymaticEntry , :width_request, 5)
+set_gtk_property!(C_EnzymaticEntry , :height_request, 5)
+# Residence time entry
+ResidenceEntry = Entry()
+set_gtk_property!(ResidenceEntry, :width_request, 5)
+set_gtk_property!(ResidenceEntry, :height_request, 5)
+
+################################################################################
+# Kinetic parameters and constants section
+################################################################################
+# Parameters
+# Parameters
+k1 = 0.6377 # h^-1
+k2 = 0.0532 # h^-1
+k3 = 0.1189 # h^-1
+km = 3.71 # g/L
+λ = 0.02
+k1B = 0.80 # g/L
+k1G = 3.15 # g/L
+k2G = 3.82 # g/L
+Cdp = 1
+Ec = 47.8
+R= 1.98
+k = 0.26
+
+# Parameters of the energy balance
+ΔH = 10
+Cp = 167.35
+ρ = 1.54
+V = 10
+
+# Calculating the transfer heat coefficent
+# Getting hin
+rin = 0.056
+rout = 0.058
+L = 0.40
+Aout = 2 * pi * rout * L
+Ain = 2 * pi * rin * L
+ρw = 988.8
+A = Aout
+D = rin * 2
+μ = 5.62e-4
+N = 1
+Re = (ρw * D ^ 2 * N)/ μ
+Pr = 0.978
+Nu = 0.87 * Re ^ 0.62 * Pr ^ 0.33
+kin = 233.58
+hin = Nu * (kin / D)
+
+# Gertting hout
+Dout = rout * 2
+kair = 0.3655
+
+# Getting Nμ
+g = 9.8
+Tsup = 50 + 273.15
+Tamb = 50 + 273.15
+B = 1 / Tsup
+ν = 2.866e-5
+Gr = (g * B*(Tsup - Tamb)* L^3)/ν^2
+Prair = 0.708
+GR2 = Gr * Prair
+c = 0.59
+m = 1/4
+Nμ = c * GR2 ^ m
+hout = Nμ *( kair / Dout )
+U = (hin * hout)/( hin + hout )
+Tjin = Tsup
+Fj =200
+Vj = 200
+Cpj = 1000
+ρj = 0.998
+
+################################################################################
+# Button section
+################################################################################
+# Starting simulation button
+Run = Button("Run")
+set_gtk_property!(Run, :tooltip_text, "Press to run simulation")
+signal_connect(Run, :clicked) do widget
+################################################################################
+        # Variables section
+################################################################################
+    global RLS1 = get_gtk_property(LsrEntry,:text,String)
+    RLS = parse(Float64, RLS1)
+
+    global C_enzimatic1 = get_gtk_property(C_EnzymaticEntry,:text,String)
+    C_Enz = parse(Float64, C_enzimatic1)
+
+    global t1 = get_gtk_property(ResidenceEntry ,:text,String)
+    t = parse(Float64, t1)
+################################################################################
+    # Getting factor fi
+    Φ = (392.9438 -31.6926 * C_Enz - 58.095 * RLS + 3.381 * C_Enz^2 + 3.777*RLS^2)/(C_Enz*RLS^2)
+################################################################################
+    # Defining the function
+    # Defining the function
+    function enzymaticH(du, u, p, t)
+        # Defining the differential equations of the process
+        # du[1] = Celullose concentration
+        # du[2] = Celobiose concentration
+        # du[3] = Glucose concentration
+        # du[4] = Temperature in the reactor core
+        # du[5] = Temperature in the heating jacket
+
+        du[1] = -((Cdp*k1*u[1]*exp(-λ))/(1+(u[2]/k1B)+(u[3]/k1G)))*exp(-Ec/(R*u[4]))*Φ - ((k2*u[2]*exp(-λ))/(1+(u[3]/k2G)
+                +(u[2]/km)))*exp(-Ec/(R*u[4]))*Φ
+        du[2] =  1.056*Φ*((k2*u[2]*exp(-λ))/(1+(u[3]/k2G)+(u[2]/km)))*exp(-Ec/(R*u[4])) + 1.1112*((Cdp*k3*exp(-λ))/(1+(u[2]/k1B)+
+                 (u[3]/k1G)))*exp(-Ec/(R*u[4]))*Φ
+        du[3] =  1.056*Φ*((Cdp*k1*u[1]*exp(-λ))/(1+(u[2]/k1B)+(u[3]/k1G)))*exp(-Ec/(R*u[4])) - ((k2*u[2]*exp(-λ))/(1+(u[3]/k2G)+
+                 (u[2]/km))*exp(-Ec/(R*u[4]))*Φ)
+        du[4] =  ((ΔH*k*exp(-Ec/(R*u[4]))*u[1])/(ρ*Cp)) + ((U*A)/(ρ*V*Cp))*(u[4]-u[5])
+        du[5] =  (Fj/Vj)*(Tjin-u[5])+((U*A)/(Vj*ρj*Cpj))*(u[4]-u[5])
+    end
+
+    # Solving differential equations thought ODEproblem with Rosenbrock23 method
+    u0 = [105,0,0,298.15,298.15]
+    tspan = (0.0, t)
+    prob = ODEProblem(enzymaticH,u0,tspan)
+    global sol = solve(prob,Rosenbrock23(), saveat = 1)
+    show(sol)
+
+    set_gtk_property!(Grp, :sensitive, true)
+    set_gtk_property!(New, :sensitive, true)
+    set_gtk_property!(sd, :sensitive, true)
+    set_gtk_property!(GraphViewer, :sensitive, true)
+    set_gtk_property!(Run, :sensitive, false)
+end
+
+New = Button("New Simulation")
+set_gtk_property!(New, :sensitive, false)
+set_gtk_property!(New, :tooltip_text, "Press for a new simulation")
+signal_connect(New, :clicked) do widget
+    # Clear canvas section (Graph section)
+    set_gtk_property!(c1,:visible,false)
+    set_gtk_property!(c2,:visible,false)
+
+    # Bottons configuration (active and inactive)
+    set_gtk_property!(Run, :sensitive, true)
+    set_gtk_property!(Grp, :sensitive, false)
+    set_gtk_property!(New, :sensitive, false)
+    set_gtk_property!(sd, :sensitive, false)
+    set_gtk_property!(GraphViewer, :sensitive, false)
+
+    # Entrys configuration in zero
+    set_gtk_property!(LsrEntry, :text,"")
+    set_gtk_property!(C_EnzymaticEntry, :text,"")
+    set_gtk_property!(ResidenceEntry, :text,"")
+end
+
+Grp = Button("Graph")
+set_gtk_property!(Grp, :sensitive, false)
+set_gtk_property!(Grp, :tooltip_text, "Press to create graphics")
+signal_connect(Grp, :clicked) do widget
+    global sol
+    global p1 = Winston.plot(sol.t, sol[1, :], sol[2,:], "r", sol[3,:],"g")
+    title("Cellulose, cellobiose and glucose concentration profile")
+    xlabel("Residence time [h]")
+    ylabel("Cellulose, cellobiose and glucose concentration [g/L]")
+    display(c1, p1)
+
+    global p2 = Winston.plot(sol.t, sol[4, :],"r", sol[5,:],"g")
+    title("Temperature profiles")
+    xlabel("Residence time [h]")
+    ylabel("Temperature [°K]")
+    display(c2, p2)
+
+    set_gtk_property!(c1,:visible,true)
+    set_gtk_property!(c2,:visible,true)
+end
+
+sd = Button("Save data")
+set_gtk_property!(sd, :sensitive, false)
+set_gtk_property!(sd, :tooltip_text, "Press to save data")
+signal_connect(sd, :clicked) do widget
+    dataCSV = DataFrames.DataFrame(
+        time = sol.t,
+        Cellulose = sol[1,:],
+        Cellobiose = sol[2,:],
+        Glucose = sol[3,:],
+        Temperature = sol[4,:],
+        JackecTemp = sol[5,:],
+    )
+    # Print the data in form of table
+    println(dataCSV)
+
+    # Save data to excel
+    if flag1 == true
+        pathfile = save_dialog_native("Save as..", Null(), ("*.csv",))
+        filename = string(pathfile, ".csv")
+        CSV.write(filename, dataCSV)
+    end
+end
+
+C = Button("Close")
+set_gtk_property!(C, :tooltip_text, "Press to close")
+signal_connect(C, :clicked) do widget
+    destroy(w)
+end
+
+GraphViewer = Button("Export Graphics")
+set_gtk_property!(GraphViewer, :tooltip_text, "Save Graphics")
+set_gtk_property!(GraphViewer, :sensitive, false)
+signal_connect(GraphViewer, :clicked) do widget
+    global p1
+    Winston.savefig(p1,"Enzymaticfigure1.png")
+    global p2
+    Winston.savefig(p2,"Enzymaticfigure2.png")
+end
+
+################################################################################
+# Variables sections text
+################################################################################
+Lsr = Label("LSR")
+Gtk.GAccessor.justify(Lsr, Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(Lsr, :margin_top, 5)
+set_gtk_property!(Lsr, :margin_bottom, 5)
+set_gtk_property!(Lsr, :margin_left, 5)
+set_gtk_property!(Lsr, :margin_right, 5)
+
+Enzymatic = Label("Enzymatic charge [% v/v]")
+Gtk.GAccessor.justify(Enzymatic, Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(Enzymatic, :margin_top, 5)
+set_gtk_property!(Enzymatic, :margin_bottom, 5)
+set_gtk_property!(Enzymatic, :margin_left, 5)
+set_gtk_property!(Enzymatic, :margin_right, 5)
+
+Time = Label("Residence time [h]")
+Gtk.GAccessor.justify(Time, Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(Time, :margin_top, 5)
+set_gtk_property!(Time, :margin_bottom, 5)
+set_gtk_property!(Time, :margin_left, 5)
+set_gtk_property!(Time, :margin_right, 5)
+
+CelluloseColorLabel = Label("Black line = Cellulose")
+Gtk.GAccessor.justify(CelluloseColorLabel, Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(CelluloseColorLabel, :margin_top, 5)
+set_gtk_property!(CelluloseColorLabel, :margin_bottom, 5)
+set_gtk_property!(CelluloseColorLabel, :margin_left, 5)
+set_gtk_property!(CelluloseColorLabel, :margin_right, 5)
+
+CellobioseColorLabel = Label("Green line = Glucose")
+Gtk.GAccessor.justify(CellobioseColorLabel, Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(CellobioseColorLabel, :margin_top, 5)
+set_gtk_property!(CellobioseColorLabel, :margin_bottom, 5)
+set_gtk_property!(CellobioseColorLabel, :margin_left, 5)
+set_gtk_property!(CellobioseColorLabel, :margin_right, 5)
+
+GlucoseColorLabel = Label("Red line = Cellobiose")
+Gtk.GAccessor.justify(GlucoseColorLabel, Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(GlucoseColorLabel, :margin_top, 5)
+set_gtk_property!(GlucoseColorLabel, :margin_bottom, 5)
+set_gtk_property!(GlucoseColorLabel, :margin_left, 5)
+set_gtk_property!(GlucoseColorLabel, :margin_right, 5)
+
+TemperatureColorLabel = Label("Red line = Temperature in the reactor core")
+Gtk.GAccessor.justify(TemperatureColorLabel , Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(TemperatureColorLabel , :margin_top, 5)
+set_gtk_property!(TemperatureColorLabel , :margin_bottom, 5)
+set_gtk_property!(TemperatureColorLabel , :margin_left, 5)
+set_gtk_property!(TemperatureColorLabel , :margin_right, 5)
+
+JacketTemperatureColorLabel = Label("Green line = Jacket temperature")
+Gtk.GAccessor.justify(JacketTemperatureColorLabel , Gtk.GConstants.GtkJustification.CENTER)
+set_gtk_property!(JacketTemperatureColorLabel , :margin_top, 5)
+set_gtk_property!(JacketTemperatureColorLabel , :margin_bottom, 5)
+set_gtk_property!(JacketTemperatureColorLabel , :margin_left, 5)
+set_gtk_property!(JacketTemperatureColorLabel , :margin_right, 5)
+
+################################################################################
+#  Authors section text
+################################################################################
+Authors =
+    Label("M.Sc. Luis Antonio Velázquez Herrera\n Ph.D Leticia López Zamora\n PhD Eusebio Bolaños Reynoso")
+Gtk.GAccessor.justify(Authors, Gtk.GConstants.GtkJustification.CENTER)
+
+Institution =
+    Label("Tecnológico Nacional de México/ Instituto Tecnológico de Orizaba, Veracruz")
+Gtk.GAccessor.justify(Institution, Gtk.GConstants.GtkJustification.CENTER)
+
+Posgrade = Label("División de Estudios de Posgrado e Investigación")
+Gtk.GAccessor.justify(Posgrade, Gtk.GConstants.GtkJustification.CENTER)
+
+################################################################################
+# Element Collocation
+################################################################################
+
+ButtonsGrid[1, 1] = New
+ButtonsGrid[2, 1] = Grp
+ButtonsGrid[3, 1] = sd
+ButtonsGrid[4, 1] = C
+ButtonsGrid[1:4, 2] = Run
+
+LabelAuthorsGrid[1, 1] = Authors
+LabelAuthorsGrid[1, 2] = Institution
+LabelAuthorsGrid[1, 3] = Posgrade
+
+VariablesGrid[1, 1] = Lsr
+VariablesGrid[2, 1] = LsrEntry
+
+VariablesGrid[1, 2] = Enzymatic
+VariablesGrid[2, 2] = C_EnzymaticEntry
+
+VariablesGrid[1, 3] = Time
+VariablesGrid[2, 3] = ResidenceEntry
+
+VariablesGrid[1, 4] = GraphViewer
+
+GraphGrid[1, 1] = c1
+GraphGrid[2, 1] = c2
+
+GraphLabelGrid[1, 1] = CelluloseColorLabel
+GraphLabelGrid[1, 2] = CellobioseColorLabel
+GraphLabelGrid[1, 3] = GlucoseColorLabel
+GraphLabelGrid[1, 4] = TemperatureColorLabel
+GraphLabelGrid[1, 5] = JacketTemperatureColorLabel
+
+push!(F1, g1)
+
+g1[1:4, 1] = ButtonFrame
+g1[1, 2] = VariablesFrame
+g1[2:4, 2:3] = GraphFrame
+g1[1:4, 3] = LabelAuthorsFrame
+g1[1, 3] = GraphLabelFrame
+
+push!(ButtonFrame, ButtonsGrid)
+push!(VariablesFrame, VariablesGrid)
+push!(LabelAuthorsFrame, LabelAuthorsGrid)
+push!(GraphFrame, GraphGrid)
+push!(GraphLabelFrame, GraphLabelGrid)
+push!(w, F1)
+Gtk.showall(w)
